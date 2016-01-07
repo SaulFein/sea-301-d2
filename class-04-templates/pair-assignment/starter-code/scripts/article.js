@@ -1,4 +1,6 @@
 var articles = [];
+var appTemplate = $('#my-message').html();
+var compiledTemplate = Handlebars.compile(appTemplate);
 
 function Article (opts) {
   this.author = opts.author;
@@ -10,8 +12,6 @@ function Article (opts) {
 }
 
 Article.prototype.toHtml = function() {
-  var appTemplate = $('#my-message').html();
-  var compiledTemplate = Handlebars.compile(appTemplate);
   for(var i =0; i < rawData.length; i++) {
     var html = compiledTemplate(rawData[i]);
     this.daysAgo = parseInt((new Date() - new Date(this.publishedOn))/60/60/24/1000);

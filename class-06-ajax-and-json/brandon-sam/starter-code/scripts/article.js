@@ -1,3 +1,11 @@
+var oldETag = '';
+// var newETag = '';
+
+if (!localStorage.eTag2){}
+  else {
+    oldETag = localStorage.eTag2;
+  }
+
 function Article (opts) {
   this.author = opts.author;
   this.authorUrl = opts.authorUrl;
@@ -43,18 +51,37 @@ Article.loadAll = function(rawData) {
 
 // This function will retrieve the data from either a local or remote source,
 // and process it, then hand off control to the View.
-var headers = '';
+
 Article.fetchAll = function() {
+
   if (localStorage.rawData) {
     // When rawData is already in localStorage,
     // we can load it with the .loadAll function above,
     // and then render the index page (using the proper method on the articleView object).
-    Article.loadAll(JSON.parse(localStorage.rawData));
-    articleView.initIndexPage();
+    $.ajax ({
+      type: "HEAD",
+      url: "/data/hackerIpsum.json",
+      complete: function(rawData) {
+        console.log(rawData.getResponseHeader("eTag"));
+        var newETag = (rawData.getResponseHeader("eTag"));
+        if(newETag === oldETag){
+          Article.loadAll(JSON.parse(localStorage.rawData));
+          articleView.initIndexPage();
+          console.log('etags match');
+        } else {
+          $.getJSON('/data/hackerIpsum.json', function(rawData) { //rawData is not the array of objects
+            Article.loadAll(rawData);
+            localStorage.rawData = JSON.stringify(rawData);
+            articleView.initIndexPage();
+          });
+          console.log('etags do not match');
+        }
+      }
+    });
 
-    // Article.loadAll();//TODO: What do we pass in here to the .loadAll function?
 
-    articleView.someFunctionToCall; //TODO: What method do we call to render the index page?
+
+
   } else {
     // TODO: When we don't already have the rawData,
     // we need to retrieve the JSON file from the server with AJAX (which jQuery method is best for this?),
@@ -74,7 +101,9 @@ Article.fetchAll = function() {
       complete: function(rawData) {
         console.log(rawData.getResponseHeader("eTag"));
         localStorage.eTag = (rawData.getResponseHeader("eTag"));
+        oldETag = localStorage.eTag2;
       }
+
     });
   }
 }

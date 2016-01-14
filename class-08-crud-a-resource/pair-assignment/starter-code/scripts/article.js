@@ -19,10 +19,16 @@
     return template(this);
   };
 
-  // TODO: Set up a DB table for articles.
+  // DONE: Set up a DB table for articles.
   Article.createTable = function(callback) {
-    webDB.execute(
-      '...',
+    webDB.execute('CREATE TABLE IF NOT EXISTS articles (' +
+    'id INTEGER PRIMARY KEY, ' +
+    'title VARCHAR(255) NOT NULL, ' +
+    'author VARCHAR(255) NOT NULL, ' +
+    'authorUrl VARCHAR (255), ' +
+    'category VARCHAR(20), ' +
+    'publishedOn DATETIME, ' +
+    'body TEXT NOT NULL);',
       function(result) {
         console.log('Successfully set up the articles table.', result);
         if (callback) callback();
@@ -30,12 +36,10 @@
     );
   };
 
-  // TODO: Correct the SQL to delete all records from the articles table.
+  // DONE: Correct the SQL to delete all records from the articles table.
   Article.truncateTable = function(callback) {
-    webDB.execute(
-      'DELETE ...;',
-      callback
-    );
+    webDB.execute('DELETE FROM articles;',
+    callback);
   };
 
 
@@ -44,8 +48,8 @@
     webDB.execute(
       [
         {
-          'sql': '...;',
-          'data': [],
+          'sql': 'INSERT INTO articles (title, author, authorUrl, category, publishedOn, body) VALUES (?, ?, ?, ?, ?, ?);',
+          'data': [this.title, this.author, this.authorUrl, this.category, this.publishedOn, this.body],
         }
       ],
       callback
@@ -57,20 +61,24 @@
     webDB.execute(
       [
         {
-          /* ... */
+          'sql': 'DELETE FROM articles (title, author, authorUrl, category, publishedOn, body) VALUES (?, ?, ?, ?, ?, ?);',
+          'data': [this.title, this.author, this.authorUrl, this.category, this.publishedOn, this.body],
         }
       ],
-      callback
+    callback
     );
   };
 
-  // TODO: Update an article instance, overwriting it's properties into the corresponding record in the database:
+  // DONE: Update an article instance, overwriting it's properties into the corresponding record in the database:
   Article.prototype.updateRecord = function(callback) {
     webDB.execute(
       [
-        /* ... */
+        {
+        'sql': 'UPDATE INTO articles (title, author, authorUrl, category, publishedOn, body WHERE id = ? ) ;',
+        'data': [this.title, this.author, this.authorUrl, this.category, this.publishedOn, this.body],
+        }
       ],
-      callback
+    callback
     );
   };
 
@@ -85,8 +93,10 @@
   // we need to retrieve the JSON and process it.
   // If the DB has data already, we'll load up the data (sorted!), and then hand off control to the View.
   Article.fetchAll = function(next) {
-    webDB.execute('', function(rows) {
+    webDB.execute('SELECT * FROM articles ORDER BY publishedOn DESC', function(rows) {
       if (rows.length) {
+        Article.loadAll(rows);
+        next();
         // Now instanitate those rows with the .loadAll function, and pass control to the view.
 
       } else {
@@ -95,11 +105,15 @@
           rawData.forEach(function(item) {
             var article = new Article(item); // Instantiate an article based on item from JSON
             // Cache the newly-instantiated article in DB:
+            article.insertRecord();
+            // webDB.execute("SELECT * FROM articles", function(article)
 
           });
           // Now get ALL the records out the DB, with their database IDs:
-          webDB.execute('', function(rows) {
+          webDB.execute('SELECT * FROM articles', function(rows) {
             // Now instanitate those rows with the .loadAll function, and pass control to the view.
+            Article.loadAll(rows);
+            next();
 
           });
         });

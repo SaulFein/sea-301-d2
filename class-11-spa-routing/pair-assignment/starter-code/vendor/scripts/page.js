@@ -45,7 +45,7 @@
    * Base path.
    */
 
-  var base = '';
+  var base = '/';
 
   /**
    * Running flag.
